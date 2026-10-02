@@ -2,39 +2,39 @@ import random
 import time
 import csv
 import os
+import sys
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 
-# Tumhara referral link aur direct proxy yahan set kar di gayi hai[cite: 3, 4]
+# Proxy hata di gayi hai taaki direct fast connection rahe
 REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
-PROXY_SERVER = "http://35.207.254.249:8899"  # India HTTP Proxy
+
+def log_print(message):
+    print(message, flush=True)
 
 def generate_email():
     names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(100, 999)}@gmail.com"
 
-def save_to_csv(email, password, proxy_used, status):
+def save_to_csv(email, password, status):
     filename = "successful_accounts.csv"
     file_exists = os.path.exists(filename)
     with open(filename, mode='a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         if not file_exists:
-            writer.writerow(["Timestamp", "Email", "Password", "Proxy Used", "Status"])
-        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
+            writer.writerow(["Timestamp", "Email", "Password", "Status"])
+        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    print(f"🚀 Starting unlimited bot with Proxy: {PROXY_SERVER}[cite: 4]")
+    log_print("🚀 Starting Proxy-Free Unlimited Bot...")
     
     account_counter = 1
     with sync_playwright() as p:
         while True:
-            print(f"\n--- Account {account_counter} (Unlimited Mode) ---")
+            log_print(f"\n--- Account {account_counter} Started ---")
             email = generate_email()
             password = "00000000"
-            print(f"Generated Email: {email}")
-            
-            proxy_config = {"server": PROXY_SERVER} if PROXY_SERVER else None
-            print(f"✅ Using Proxy Server: {PROXY_SERVER}[cite: 4]")
+            log_print(f"Generated Email: {email}")
             
             browser = p.chromium.launch(
                 headless=True,
@@ -47,7 +47,6 @@ def main():
             )
             
             context = browser.new_context(
-                proxy=proxy_config,
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
                 viewport={"width": 1366, "height": 768}
             )
@@ -56,20 +55,23 @@ def main():
             success = False
             for attempt in range(3):
                 try:
+                    log_print(f"Opening referral link (Attempt {attempt+1})...")
                     page.goto(REFERRAL_LINK, timeout=40000)
                     success = True
                     break
-                except Exception:
+                except Exception as e:
+                    log_print(f"⚠️ Network retry error: {e}")
                     time.sleep(3)
             
             if not success:
-                save_to_csv(email, password, str(PROXY_SERVER), "Failed - Network Error")
+                save_to_csv(email, password, "Failed - Network Error")
                 browser.close()
                 account_counter += 1
                 continue
             
             try:
                 # Signup steps
+                log_print("Filling email & clicking signup...")
                 page.fill("input[placeholder*='Email'], input[type='email']", email)
                 page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
                 time.sleep(2)
@@ -83,6 +85,7 @@ def main():
                 time.sleep(0.5)
                 
                 # Checkbox Click
+                log_print("Agreeing to terms...")
                 page.evaluate("""
                     () => {
                         const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -112,10 +115,12 @@ def main():
                 time.sleep(2)
                 
                 # Sign Up Button
+                log_print("Submitting signup...")
                 page.locator("div[class*='modal'] button, form button, [role='dialog'] button").filter(has_text="Sign Up").filter(has_not=page.locator("text=Google")).last.click(timeout=5000)
                 time.sleep(7)
                 
                 # BitLabs Click
+                log_print("Searching for BitLabs...")
                 page.evaluate("window.scrollBy(0, 600);")
                 time.sleep(1.5)
                 
@@ -147,9 +152,11 @@ def main():
                     if not clicked_survey:
                         raise Exception("BitLabs card not found.")
 
+                log_print("BitLabs opened successfully!")
                 time.sleep(6)
                 
                 # Accept & Continue handler
+                log_print("Handling Accept & Continue...")
                 for _ in range(8):
                     clicked_accept = False
                     try:
@@ -175,6 +182,7 @@ def main():
                 time.sleep(5)
 
                 # Survey / Profile questions loop
+                log_print("Completing profile steps...")
                 for q_step in range(1, 11):
                     for frame in page.frames:
                         if "about:blank" in frame.url: continue
@@ -200,12 +208,12 @@ def main():
                             pass
                     time.sleep(2)
 
-                save_to_csv(email, password, str(PROXY_SERVER), "Success")
-                print(f"🎉 Account {account_counter} completed successfully using proxy[cite: 4]!")
+                save_to_csv(email, password, "Success")
+                log_print(f"🎉 Account {account_counter} completed successfully!")
                 
             except Exception as e:
-                print(f"❌ Error in Account {account_counter}: {e}")
-                save_to_csv(email, password, str(PROXY_SERVER), f"Failed - {str(e)}")
+                log_print(f"❌ Error in Account {account_counter}: {e}")
+                save_to_csv(email, password, f"Failed - {str(e)}")
             finally:
                 time.sleep(2)
                 browser.close()
