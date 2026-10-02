@@ -7,9 +7,21 @@ from datetime import datetime
 from playwright.sync_api import sync_playwright
 
 REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
+SCREENSHOT_DIR = "bot_screenshots"
 
 def log_print(message):
     print(message, flush=True)
+
+def take_screenshot(page, step_name):
+    if not os.path.exists(SCREENSHOT_DIR):
+        os.makedirs(SCREENSHOT_DIR)
+    timestamp = datetime.now().strftime("%H%M%S")
+    filepath = os.path.join(SCREENSHOT_DIR, f"{step_name}_{timestamp}.png")
+    try:
+        page.screenshot(path=filepath, full_page=True)
+        log_print(f"📸 Screenshot saved: {filepath}")
+    except Exception as e:
+        log_print(f"⚠️ Failed to take screenshot: {e}")
 
 def generate_email():
     names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha", "vikash", "sunil", "ankit"]
@@ -25,7 +37,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Single-Run Test Bot...")
+    log_print("🚀 Starting Screenshot-Enabled WeCash Bot...")
     
     with sync_playwright() as p:
         log_print("\n--- Test Account Started ---")
@@ -56,6 +68,7 @@ def main():
                 log_print(f"Opening referral link (Attempt {attempt+1})...")
                 page.goto(REFERRAL_LINK, timeout=60000)
                 page.wait_for_load_state("networkidle", timeout=15000)
+                take_screenshot(page, "01_referral_loaded")
                 success = True
                 break
             except Exception as e:
@@ -69,13 +82,15 @@ def main():
             return
         
         try:
-            # Signup steps with extended waiting
+            # Signup steps with screenshots
             log_print("Filling email & clicking initial signup...")
             page.wait_for_selector("input[placeholder*='Email'], input[type='email']", timeout=15000)
             page.fill("input[placeholder*='Email'], input[type='email']", email)
             time.sleep(2)
+            take_screenshot(page, "02_email_filled")
             page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
             time.sleep(3)
+            take_screenshot(page, "03_clicked_signup")
             
             try:
                 page.locator(".modal input[type='email'], form input[type='email']").first.fill(email)
@@ -84,6 +99,7 @@ def main():
             
             page.locator(".modal input[type='password'], form input[type='password']").first.fill(password)
             time.sleep(2)
+            take_screenshot(page, "04_password_filled")
             
             # Checkbox Click securely with JS fallback
             log_print("Agreeing to terms...")
@@ -106,6 +122,7 @@ def main():
                 }
             """)
             time.sleep(3)
+            take_screenshot(page, "05_terms_agreed")
             
             # Sign Up Button submission with extended timeout and JS force click
             log_print("Submitting signup with extended wait...")
@@ -133,7 +150,8 @@ def main():
                 time.sleep(2)
 
             log_print("Waiting for dashboard to load after signup...")
-            time.sleep(12)
+            time.sleep(15)  # Screenshot se pehle thoda zyada wait
+            take_screenshot(page, "06_dashboard_loaded")
             
             # BitLabs / Offerwall Task Click
             log_print("Searching for BitLabs / Task section...")
@@ -168,7 +186,8 @@ def main():
                 raise Exception("BitLabs / Offerwall section not found on dashboard.")
 
             log_print("BitLabs / Offerwall opened successfully!")
-            time.sleep(10)
+            time.sleep(12)
+            take_screenshot(page, "07_offerwall_opened")
             
             # Accept & Continue handler
             log_print("Handling Accept & Continue / Survey prompts...")
@@ -191,11 +210,12 @@ def main():
                 time.sleep(3)
 
             save_to_csv(email, password, "Success - Task Triggered")
-            log_print("🎉 Test Account completed successfully!")
+            log_print("🎉 Test Account completed successfully with screenshots!")
             
         except Exception as e:
             log_print(f"❌ Error in Test Account: {e}")
             save_to_csv(email, password, f"Failed - {str(e)}")
+            take_screenshot(page, "ERROR_STATE") # Error hone par bhi screenshot le lo
         finally:
             time.sleep(3)
             browser.close()
