@@ -26,11 +26,10 @@ jobs:
         run: |
           python -u main.py
 
-      # YE NYA STEP ADD KAREIN TAAKI SCREENSHOTS DOWNLOAD KAR SAKEIN
       - name: Upload Screenshots as Artifact
-        if: always()  # Chahe script pass ho ya fail, screenshots upload honge
-        uses: actions/upload-artifact@v3
+        if: always()
+        uses: actions/upload-artifact@v4  # <-- YEHAAN @v4 KAR DIYA HAI
         with:
           name: bot-screenshots
           path: bot_screenshots/
-          retention-days: 1  # Artifact sirf 1 din tak save rahega
+          retention-days: 1
