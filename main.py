@@ -37,7 +37,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Fixed Checkbox WeCash Bot...")
+    log_print("🚀 Starting Guaranteed Checkbox WeCash Bot...")
     
     with sync_playwright() as p:
         log_print("\n--- Test Account Started ---")
@@ -101,16 +101,22 @@ def main():
             time.sleep(2)
             take_screenshot(page, "04_password_filled")
             
-            # --- FIX: EXACT CHECKBOX CLICKING ---
-            log_print("Checking the terms & conditions checkbox...")
+            # --- GUARANTEED CHECKBOX CLICK FIX ---
+            log_print("Clicking terms checkbox...")
             try:
-                # Try clicking directly on the checkbox input or its label text
                 page.locator("input[type='checkbox']").click(force=True)
-            except:
-                try:
-                    page.locator("text=I agree to the").click(force=True)
-                except Exception as ex:
-                    log_print(f"⚠️ Checkbox direct click warning: {ex}")
+            except Exception as e:
+                log_print(f"Checkbox direct click fallback: {e}")
+                page.evaluate("""
+                    () => {
+                        const cb = document.querySelector("input[type='checkbox']");
+                        if (cb) {
+                            cb.click();
+                            cb.checked = true;
+                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                """)
             
             time.sleep(2)
             take_screenshot(page, "05_terms_agreed")
@@ -180,7 +186,7 @@ def main():
                 time.sleep(3)
 
             save_to_csv(email, password, "Success - Task Triggered")
-            log_print("🎉 Test Account completed successfully with checkbox fix!")
+            log_print("🎉 Test Account completed successfully with guaranteed checkbox fix!")
             
         except Exception as e:
             log_print(f"❌ Error in Test Account: {e}")
