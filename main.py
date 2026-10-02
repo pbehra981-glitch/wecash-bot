@@ -37,7 +37,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Screenshot-Enabled WeCash Bot...")
+    log_print("🚀 Starting Screenshot-Enabled WeCash Bot (Single Run)...")
     
     with sync_playwright() as p:
         log_print("\n--- Test Account Started ---")
@@ -124,7 +124,7 @@ def main():
             time.sleep(3)
             take_screenshot(page, "05_terms_agreed")
             
-            # Sign Up Button submission with extended timeout and JS force click
+            # Sign Up Button submission
             log_print("Submitting signup with extended wait...")
             submitted = False
             for _ in range(5):
@@ -150,7 +150,7 @@ def main():
                 time.sleep(2)
 
             log_print("Waiting for dashboard to load after signup...")
-            time.sleep(15)  # Screenshot se pehle thoda zyada wait
+            time.sleep(15)
             take_screenshot(page, "06_dashboard_loaded")
             
             # BitLabs / Offerwall Task Click
@@ -215,7 +215,7 @@ def main():
         except Exception as e:
             log_print(f"❌ Error in Test Account: {e}")
             save_to_csv(email, password, f"Failed - {str(e)}")
-            take_screenshot(page, "ERROR_STATE") # Error hone par bhi screenshot le lo
+            take_screenshot(page, "ERROR_STATE")
         finally:
             time.sleep(3)
             browser.close()
