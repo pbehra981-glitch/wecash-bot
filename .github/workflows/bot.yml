@@ -1,4 +1,4 @@
-name: WeCash Unlimited Bot
+name: WeCash Screenshot Bot
 
 on:
   workflow_dispatch:
@@ -25,3 +25,12 @@ jobs:
       - name: Run Bot Script
         run: |
           python -u main.py
+
+      # YE NYA STEP ADD KAREIN TAAKI SCREENSHOTS DOWNLOAD KAR SAKEIN
+      - name: Upload Screenshots as Artifact
+        if: always()  # Chahe script pass ho ya fail, screenshots upload honge
+        uses: actions/upload-artifact@v3
+        with:
+          name: bot-screenshots
+          path: bot_screenshots/
+          retention-days: 1  # Artifact sirf 1 din tak save rahega
