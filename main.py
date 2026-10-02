@@ -37,7 +37,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Screenshot-Enabled WeCash Bot (Single Run)...")
+    log_print("🚀 Starting Fixed Checkbox WeCash Bot...")
     
     with sync_playwright() as p:
         log_print("\n--- Test Account Started ---")
@@ -82,7 +82,7 @@ def main():
             return
         
         try:
-            # Signup steps with screenshots
+            # Signup steps
             log_print("Filling email & clicking initial signup...")
             page.wait_for_selector("input[placeholder*='Email'], input[type='email']", timeout=15000)
             page.fill("input[placeholder*='Email'], input[type='email']", email)
@@ -101,53 +101,23 @@ def main():
             time.sleep(2)
             take_screenshot(page, "04_password_filled")
             
-            # Checkbox Click securely with JS fallback
-            log_print("Agreeing to terms...")
-            page.evaluate("""
-                () => {
-                    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                    if (checkboxes.length > 0) {
-                        checkboxes[0].click();
-                        checkboxes[0].dispatchEvent(new Event('change', { bubbles: true }));
-                    } else {
-                        const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-                        let node;
-                        while (node = walkers.nextNode()) {
-                            if (node.nodeValue && node.nodeValue.includes('I agree')) {
-                                node.parentElement.click();
-                                break;
-                            }
-                        }
-                    }
-                }
-            """)
-            time.sleep(3)
+            # --- FIX: EXACT CHECKBOX CLICKING ---
+            log_print("Checking the terms & conditions checkbox...")
+            try:
+                # Try clicking directly on the checkbox input or its label text
+                page.locator("input[type='checkbox']").click(force=True)
+            except:
+                try:
+                    page.locator("text=I agree to the").click(force=True)
+                except Exception as ex:
+                    log_print(f"⚠️ Checkbox direct click warning: {ex}")
+            
+            time.sleep(2)
             take_screenshot(page, "05_terms_agreed")
             
             # Sign Up Button submission
-            log_print("Submitting signup with extended wait...")
-            submitted = False
-            for _ in range(5):
-                try:
-                    submitted = page.evaluate("""
-                        () => {
-                            const btns = Array.from(document.querySelectorAll('button, [role="button"]'));
-                            const signupBtn = btns.find(b => {
-                                const txt = (b.innerText || '').trim().toLowerCase();
-                                return txt.includes('sign up') && !txt.includes('google');
-                            });
-                            if (signupBtn) {
-                                signupBtn.removeAttribute('disabled');
-                                signupBtn.click();
-                                return true;
-                            }
-                            return false;
-                        }
-                    """)
-                    if submitted: break
-                except:
-                    pass
-                time.sleep(2)
+            log_print("Clicking final Sign Up button...")
+            page.locator("button:has-text('Sign Up')").filter(has_not=page.locator("text=Google")).last.click(force=True, timeout=10000)
 
             log_print("Waiting for dashboard to load after signup...")
             time.sleep(15)
@@ -210,7 +180,7 @@ def main():
                 time.sleep(3)
 
             save_to_csv(email, password, "Success - Task Triggered")
-            log_print("🎉 Test Account completed successfully with screenshots!")
+            log_print("🎉 Test Account completed successfully with checkbox fix!")
             
         except Exception as e:
             log_print(f"❌ Error in Test Account: {e}")
