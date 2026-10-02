@@ -24,4 +24,4 @@ jobs:
 
       - name: Run Bot Script
         run: |
-          python main.py
+          python -u main.py
