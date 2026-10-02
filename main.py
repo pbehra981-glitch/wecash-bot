@@ -6,15 +6,14 @@ import sys
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 
-# Proxy hata di gayi hai taaki direct fast connection rahe
 REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
 
 def log_print(message):
     print(message, flush=True)
 
 def generate_email():
-    names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
-    return f"{random.choice(names)}.{random.choice(names)}{random.randint(100, 999)}@gmail.com"
+    names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha", "vikash", "sunil", "ankit"]
+    return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
 def save_to_csv(email, password, status):
     filename = "successful_accounts.csv"
@@ -26,7 +25,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Proxy-Free Unlimited Bot...")
+    log_print("🚀 Starting Optimized WeCash & BitLabs Task Bot...")
     
     account_counter = 1
     with sync_playwright() as p:
@@ -38,10 +37,11 @@ def main():
             
             browser = p.chromium.launch(
                 headless=True,
-                slow_mo=60,
+                slow_mo=50,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
+                    "--disable-dev-shm-usage",
                     "--disable-infobars"
                 ]
             )
@@ -56,7 +56,8 @@ def main():
             for attempt in range(3):
                 try:
                     log_print(f"Opening referral link (Attempt {attempt+1})...")
-                    page.goto(REFERRAL_LINK, timeout=40000)
+                    page.goto(REFERRAL_LINK, timeout=45000)
+                    page.wait_for_load_state("networkidle", timeout=10000)
                     success = True
                     break
                 except Exception as e:
@@ -73,8 +74,9 @@ def main():
                 # Signup steps
                 log_print("Filling email & clicking signup...")
                 page.fill("input[placeholder*='Email'], input[type='email']", email)
+                time.sleep(1)
                 page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
-                time.sleep(2)
+                time.sleep(3)
                 
                 try:
                     page.locator(".modal input[type='email'], form input[type='email']").first.fill(email)
@@ -82,30 +84,21 @@ def main():
                     pass
                 
                 page.locator(".modal input[type='password'], form input[type='password']").first.fill(password)
-                time.sleep(0.5)
+                time.sleep(1)
                 
-                # Checkbox Click
+                # Checkbox Click securely
                 log_print("Agreeing to terms...")
                 page.evaluate("""
                     () => {
-                        const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-                        let node;
-                        while (node = walkers.nextNode()) {
-                            if (node.nodeValue && node.nodeValue.includes('I agree to the')) {
-                                const range = document.createRange();
-                                range.selectNode(node);
-                                const rect = range.getBoundingClientRect();
-                                if (rect.width > 0) {
-                                    const clickX = rect.left - 18;
-                                    const clickY = rect.top + (rect.height / 2);
-                                    const target = document.elementFromPoint(clickX, clickY);
-                                    if (target) {
-                                        const clickEvent = new MouseEvent('click', {
-                                            view: window, bubbles: true, cancelable: true,
-                                            clientX: clickX, clientY: clickY
-                                        });
-                                        target.dispatchEvent(clickEvent);
-                                    }
+                        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                        if (checkboxes.length > 0) {
+                            checkboxes[0].click();
+                        } else {
+                            const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                            let node;
+                            while (node = walkers.nextNode()) {
+                                if (node.nodeValue && node.nodeValue.includes('I agree')) {
+                                    node.parentElement.click();
                                     break;
                                 }
                             }
@@ -114,108 +107,73 @@ def main():
                 """)
                 time.sleep(2)
                 
-                # Sign Up Button
+                # Sign Up Button submission
                 log_print("Submitting signup...")
                 page.locator("div[class*='modal'] button, form button, [role='dialog'] button").filter(has_text="Sign Up").filter(has_not=page.locator("text=Google")).last.click(timeout=5000)
-                time.sleep(7)
+                log_print("Waiting for dashboard to load after signup...")
+                time.sleep(10)  # Thoda zyada wait taaki account fully login ho jaye
                 
-                # BitLabs Click
-                log_print("Searching for BitLabs...")
-                page.evaluate("window.scrollBy(0, 600);")
-                time.sleep(1.5)
+                # BitLabs / Offerwall Task Click
+                log_print("Searching for BitLabs / Task section...")
+                page.evaluate("window.scrollBy(0, 800);")
+                time.sleep(3)
                 
                 clicked_survey = False
-                for attempt in range(3):
+                for attempt in range(5):
                     try:
-                        bitlabs_locator = page.locator("text=BitLabs").first
-                        if bitlabs_locator.is_visible(timeout=5000):
-                            bitlabs_locator.scroll_into_view_if_needed()
-                            bitlabs_locator.click(force=True, timeout=5000)
-                            clicked_survey = True
-                            break
-                    except:
-                        time.sleep(2)
-                
-                if not clicked_survey:
-                    clicked_survey = page.evaluate("""
-                        () => {
-                            const elements = Array.from(document.querySelectorAll('div, a, span, button'));
-                            const bitlabsEl = elements.find(el => (el.innerText || '').trim().includes('BitLabs') && el.offsetParent !== null);
-                            if (bitlabsEl) {
-                                bitlabsEl.scrollIntoView({behavior: 'smooth', block: 'center'});
-                                bitlabsEl.click();
-                                return true;
+                        # Multiple strategies to find BitLabs
+                        clicked_survey = page.evaluate("""
+                            () => {
+                                const elements = Array.from(document.querySelectorAll('div, a, span, button, p, h3'));
+                                const target = elements.find(el => {
+                                    const txt = (el.innerText || '').trim();
+                                    return (txt.includes('BitLabs') || txt.includes('Survey') || txt.includes('Offers')) && el.offsetParent !== null;
+                                });
+                                if (target) {
+                                    target.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                    target.click();
+                                    return true;
+                                }
+                                return false;
                             }
-                            return false;
-                        }
-                    """)
-                    if not clicked_survey:
-                        raise Exception("BitLabs card not found.")
-
-                log_print("BitLabs opened successfully!")
-                time.sleep(6)
-                
-                # Accept & Continue handler
-                log_print("Handling Accept & Continue...")
-                for _ in range(8):
-                    clicked_accept = False
-                    try:
-                        btn = page.locator("button:has-text('Accept & Continue')").first
-                        if btn.is_visible(timeout=1000):
-                            btn.click(force=True)
+                        """)
+                        if clicked_survey:
                             break
                     except:
                         pass
+                    time.sleep(3)
+                
+                if not clicked_survey:
+                    raise Exception("BitLabs / Offerwall section not found on dashboard.")
+
+                log_print("BitLabs / Offerwall opened successfully!")
+                time.sleep(8)
+                
+                # Accept & Continue handler inside frames or main page
+                log_print("Handling Accept & Continue / Survey prompts...")
+                for step in range(5):
                     for frame in page.frames:
                         if "about:blank" in frame.url: continue
                         try:
-                            btn = frame.locator("button:has-text('Accept & Continue')").first
-                            if btn.is_visible(timeout=1000):
-                                btn.click(force=True)
-                                clicked_accept = True
-                                break
+                            frame.evaluate("""
+                                () => {
+                                    const btns = Array.from(document.querySelectorAll('button, div, span'));
+                                    const btn = btns.find(b => (b.innerText || '').includes('Accept') || (b.innerText || '').includes('Continue') || (b.innerText || '').includes('Start'));
+                                    if (btn) btn.click();
+                                }
+                            """)
                         except:
                             pass
-                    if clicked_accept: break
-                    time.sleep(2)
+                    time.sleep(3)
 
-                time.sleep(5)
-
-                # Survey / Profile questions loop
-                log_print("Completing profile steps...")
-                for q_step in range(1, 11):
-                    for frame in page.frames:
-                        if "about:blank" in frame.url: continue
-                        try:
-                            cont_btn = frame.locator("button:has-text('Continue'), button:has-text('Next')").first
-                            if cont_btn.is_visible(timeout=500):
-                                frame.evaluate("""
-                                    () => {
-                                        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"], input[type="radio"]'));
-                                        if (checkboxes.length > 0) { checkboxes[0].click(); return; }
-                                        const options = Array.from(document.querySelectorAll('div, label, span')).filter(el => {
-                                            const txt = (el.innerText || '').trim();
-                                            return txt.length > 0 && txt.length < 30 && !txt.includes('Continue') && !txt.includes('Next');
-                                        });
-                                        if (options.length > 0) { options[0].click(); }
-                                    }
-                                """)
-                                time.sleep(1)
-                                if cont_btn.is_visible(timeout=1000):
-                                    cont_btn.click(force=True)
-                                    break
-                        except:
-                            pass
-                    time.sleep(2)
-
-                save_to_csv(email, password, "Success")
-                log_print(f"🎉 Account {account_counter} completed successfully!")
+                save_to_csv(email, password, "Success - Task Triggered")
+                log_print(f"🎉 Account {account_counter} completed with tasks!")
                 
             except Exception as e:
                 log_print(f"❌ Error in Account {account_counter}: {e}")
                 save_to_csv(email, password, f"Failed - {str(e)}")
             finally:
-                time.sleep(2)
+                time.sleep(3)
                 browser.close()
                 account_counter += 1
                 
