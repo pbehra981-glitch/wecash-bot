@@ -94,7 +94,7 @@ def main():
                     success = True
                     break
                 except Exception as net_err:
-                    log_print(f"⚠️ Network issue: {net_err}. Retrying...")
+                    log_print(f"⚠️️ Network issue: {net_err}. Retrying...")
                     time.sleep(3)
             
             if not success:
