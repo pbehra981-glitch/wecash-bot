@@ -1,4 +1,4 @@
-name: WeCash Screenshot Bot
+name: WeCash Automated Bot
 
 on:
   workflow_dispatch:
@@ -25,11 +25,3 @@ jobs:
       - name: Run Bot Script
         run: |
           python -u main.py
-
-      - name: Upload Screenshots as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4  # <-- YEHAAN @v4 KAR DIYA HAI
-        with:
-          name: bot-screenshots
-          path: bot_screenshots/
-          retention-days: 1
