@@ -11,16 +11,16 @@ SCREENSHOT_DIR = "bot_screenshots"
 
 # Webshare ke 10 proxies ki list
 PROXIES = [
-    {"ip": "31.59.20.176", "port": "6754", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "45.38.107.97", "port": "6014", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "64.137.96.74", "port": "6641", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "198.23.243.226", "port": "6361", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "38.154.185.97", "port": "6370", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "84.247.60.125", "port": "6095", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "142.111.67.146", "port": "5611", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "191.96.254.138", "port": "6185", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "31.58.9.4", "port": "6077", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
-    {"ip": "198.46.161.42", "port": "5092", "user": "bmpgkrsz", "pass": "axzs3906v8y0"}[cite: 9]
+    {"ip": "31.59.20.176", "port": "6754", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "45.38.107.97", "port": "6014", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "64.137.96.74", "port": "6641", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "198.23.243.226", "port": "6361", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "38.154.185.97", "port": "6370", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "84.247.60.125", "port": "6095", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "142.111.67.146", "port": "5611", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "191.96.254.138", "port": "6185", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "31.58.9.4", "port": "6077", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},
+    {"ip": "198.46.161.42", "port": "5092", "user": "bmpgkrsz", "pass": "axzs3906v8y0"}
 ]
 
 def log_print(message):
@@ -233,7 +233,7 @@ def main():
                         
                         main_refresh = page.locator("button:has-text('Refresh')").first
                         if main_refresh.is_visible(timeout=1000):
-                            print("⚠️️ VPN Detected on main page! Clicking Refresh...")
+                            print("⚠️ VPN Detected on main page! Clicking Refresh...")
                             main_refresh.click(force=True)
                             time.sleep(3)
                     except:
