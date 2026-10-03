@@ -54,7 +54,7 @@ def save_to_csv(email, password, proxy_used, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
 
 def main():
-    log_print("🚀 Starting Coordinate-Click WeCash Bot...")
+    log_print("🚀 Starting Direct Button Force-Click WeCash Bot...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -127,58 +127,26 @@ def main():
                 time.sleep(1)
                 take_screenshot(page, "04_modal_credentials_filled")
                 
-                # Step 4: DIRECT COORDINATE CLICK ON CHECKBOX (1366x768 Viewport ke hisaab se exact box position)
-                log_print("Step 4: Clicking checkbox via exact screen coordinates...")
-                try:
-                    # Modal ke andar checkbox ke aas-pass ka exact coordinate click
-                    # Viewport 1366x768 mein modal center par hota hai, checkbox roughly X=540, Y=600 ke aas-pass hota hai
-                    # Hum JS se bhi bounding box nikal kar click karwa rahe hain taaki 100% exact ho:
-                    page.evaluate("""
-                        () => {
-                            const cb = document.querySelector('input[type="checkbox"]') || document.querySelector('.ant-checkbox-input');
-                            if (cb) {
-                                cb.scrollIntoView();
-                                const box = cb.getBoundingClientRect();
-                                const clickX = box.left + (box.width / 2);
-                                const clickY = box.top + (box.height / 2);
-                                
-                                // Dispatch direct mouse events
-                                const ev = new MouseEvent('click', {
-                                    view: window,
-                                    bubbles: true,
-                                    cancelable: true,
-                                    clientX: clickX,
-                                    clientY: clickY
-                                });
-                                cb.dispatchEvent(ev);
-                                cb.checked = true;
-                                cb.click();
-                            }
-                        }
-                    """)
-                    
-                    # Fallback direct coordinate mouse click using Playwright
-                    # Modal center mein hone par checkbox ka coordinate X: 535, Y: 597 ke kareeb hota hai
-                    page.mouse.click(535, 597)
-                except Exception as e:
-                    log_print(f"Coordinate click warning: {e}")
-
-                time.sleep(2)
-                take_screenshot(page, "05_checkbox_checked")
-                
-                # Step 5: Sign Up Button click
-                log_print("Step 5: Clicking Modal's Sign Up button...")
+                # Step 4 & 5: Bypass Checkbox and Force-Enable & Click Sign Up Button Directly
+                log_print("Step 4 & 5: Bypassing checkbox and forcing Sign Up button...")
                 page.evaluate("""
                     () => {
-                        const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
-                        const signupBtn = buttons.find(b => {
-                            const txt = (b.innerText || '').trim().toLowerCase();
-                            return txt.includes('sign up') && !txt.includes('google');
+                        // 1. Force remove disabled from all buttons or form submitters
+                        const buttons = Array.from(document.querySelectorAll('button, [role="button"], input[type="submit"]'));
+                        buttons.forEach(btn => {
+                            btn.removeAttribute('disabled');
+                            btn.classList.remove('disabled');
+                            const txt = (btn.innerText || '').toLowerCase();
+                            if (txt.includes('sign up') && !txt.includes('google')) {
+                                btn.click();
+                            }
                         });
-                        if (signupBtn) {
-                            signupBtn.removeAttribute('disabled');
-                            signupBtn.classList.remove('disabled');
-                            signupBtn.click();
+
+                        // 2. Fallback: Dispatch submit event directly on form
+                        const form = document.querySelector('form');
+                        if (form) {
+                            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                            form.dispatchEvent(submitEvent);
                         }
                     }
                 """)
