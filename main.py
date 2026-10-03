@@ -26,7 +26,7 @@ def generate_email():
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
 def main():
-    log_print("🚀 Starting Screenshot-Enabled Stealth Bot...")
+    log_print("🚀 Starting Advanced Checkbox-Bypass Bot...")
     
     with sync_playwright() as p:
         email = generate_email()
@@ -86,32 +86,31 @@ def main():
             time.sleep(1.5)
             take_screenshot(page, "04_modal_credentials_filled")
             
-            log_print("Step 4: Checking terms checkbox via JS...")
+            # --- ULTRA BULLETPROOF CHECKBOX & SIGNUP BYPASS ---
+            log_print("Step 4: Forcing Checkbox & Terms Click via Deep DOM Search...")
             page.evaluate("""
                 () => {
-                    const cb = document.querySelector('input[type="checkbox"]');
-                    if (cb) {
+                    // 1. Direct input checkbox check
+                    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(cb => {
                         cb.checked = true;
                         cb.click();
                         cb.dispatchEvent(new Event('change', { bubbles: true }));
-                    } else {
-                        const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-                        let node;
-                        while (node = walkers.nextNode()) {
-                            if (node.nodeValue && node.nodeValue.includes('I agree to the')) {
-                                node.parentElement.click();
-                                break;
-                            }
+                        cb.dispatchEvent(new Event('input', { bubbles: true }));
+                    });
+
+                    // 2. Target container text "I agree" and click its parent/wrapper
+                    const allElements = Array.from(document.querySelectorAll('*'));
+                    const targetEl = allElements.find(el => (el.innerText || '').includes('I agree to the'));
+                    if (targetEl) {
+                        targetEl.click();
+                        // Click previous or wrapper element if checkbox is custom styled
+                        if (targetEl.previousElementSibling) {
+                            targetEl.previousElementSibling.click();
                         }
                     }
-                }
-            """)
-            time.sleep(1.5)
-            take_screenshot(page, "05_checkbox_checked")
-            
-            log_print("Step 5: Clicking Sign Up button...")
-            page.evaluate("""
-                () => {
+
+                    // 3. Force enable and click Sign Up button instantly
                     const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
                     const signupBtn = buttons.find(b => {
                         const txt = (b.innerText || '').trim().toLowerCase();
@@ -125,10 +124,13 @@ def main():
                 }
             """)
             
-            log_print("Waiting for signup result...")
+            time.sleep(3)
+            take_screenshot(page, "05_after_checkbox_click")
+            
+            log_print("Waiting for signup confirmation and dashboard...")
             time.sleep(10)
             take_screenshot(page, "06_after_signup")
-            log_print("🎉 Flow Executed with Screenshots!")
+            log_print("🎉 Flow Executed Successfully!")
             
         except Exception as e:
             log_print(f"❌ Error encountered: {e}")
