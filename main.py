@@ -26,7 +26,7 @@ def generate_email():
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
 def main():
-    log_print("🚀 Starting Advanced Checkbox-Bypass Bot...")
+    log_print("🚀 Starting Bot with Exact Coordinate Checkbox Logic...")
     
     with sync_playwright() as p:
         email = generate_email()
@@ -86,31 +86,45 @@ def main():
             time.sleep(1.5)
             take_screenshot(page, "04_modal_credentials_filled")
             
-            # --- ULTRA BULLETPROOF CHECKBOX & SIGNUP BYPASS ---
-            log_print("Step 4: Forcing Checkbox & Terms Click via Deep DOM Search...")
+            # Step 4: Checkbox Click (Safe coordinate method)
+            log_print("Step 4: Clicking the terms checkbox safely inside modal...")
             page.evaluate("""
                 () => {
-                    // 1. Direct input checkbox check
-                    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                    checkboxes.forEach(cb => {
-                        cb.checked = true;
-                        cb.click();
-                        cb.dispatchEvent(new Event('change', { bubbles: true }));
-                        cb.dispatchEvent(new Event('input', { bubbles: true }));
-                    });
-
-                    // 2. Target container text "I agree" and click its parent/wrapper
-                    const allElements = Array.from(document.querySelectorAll('*'));
-                    const targetEl = allElements.find(el => (el.innerText || '').includes('I agree to the'));
-                    if (targetEl) {
-                        targetEl.click();
-                        // Click previous or wrapper element if checkbox is custom styled
-                        if (targetEl.previousElementSibling) {
-                            targetEl.previousElementSibling.click();
+                    const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                    let node;
+                    while (node = walkers.nextNode()) {
+                        if (node.nodeValue && node.nodeValue.includes('I agree to the')) {
+                            const range = document.createRange();
+                            range.selectNode(node);
+                            const rect = range.getBoundingClientRect();
+                            if (rect.width > 0) {
+                                const clickX = rect.left - 18;
+                                const clickY = rect.top + (rect.height / 2);
+                                
+                                const target = document.elementFromPoint(clickX, clickY);
+                                if (target) {
+                                    const clickEvent = new MouseEvent('click', {
+                                        view: window,
+                                        bubbles: true,
+                                        cancelable: true,
+                                        clientX: clickX,
+                                        clientY: clickY
+                                    });
+                                    target.dispatchEvent(clickEvent);
+                                }
+                                break;
+                            }
                         }
                     }
-
-                    // 3. Force enable and click Sign Up button instantly
+                }
+            """)
+            time.sleep(2)
+            take_screenshot(page, "05_checkbox_checked")
+            
+            # Step 5: Force enable & click Sign Up button
+            log_print("Step 5: Forcing Sign Up button click...")
+            page.evaluate("""
+                () => {
                     const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
                     const signupBtn = buttons.find(b => {
                         const txt = (b.innerText || '').trim().toLowerCase();
@@ -124,10 +138,7 @@ def main():
                 }
             """)
             
-            time.sleep(3)
-            take_screenshot(page, "05_after_checkbox_click")
-            
-            log_print("Waiting for signup confirmation and dashboard...")
+            log_print("Waiting for dashboard to load...")
             time.sleep(10)
             take_screenshot(page, "06_after_signup")
             log_print("🎉 Flow Executed Successfully!")
