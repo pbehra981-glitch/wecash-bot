@@ -1,18 +1,32 @@
 import random
 import time
+import os
+from datetime import datetime
 from playwright.sync_api import sync_playwright
 
 REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
+SCREENSHOT_DIR = "bot_screenshots"
 
 def log_print(message):
     print(message, flush=True)
+
+def take_screenshot(page, step_name):
+    if not os.path.exists(SCREENSHOT_DIR):
+        os.makedirs(SCREENSHOT_DIR)
+    timestamp = datetime.now().strftime("%H%M%S")
+    filepath = os.path.join(SCREENSHOT_DIR, f"{step_name}_{timestamp}.png")
+    try:
+        page.screenshot(path=filepath, full_page=True)
+        log_print(f"📸 Screenshot saved: {filepath}")
+    except Exception as e:
+        log_print(f"⚠️ Failed to take screenshot: {e}")
 
 def generate_email():
     names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
 def main():
-    log_print("🚀 Starting Clean Stealth Signup Bot...")
+    log_print("🚀 Starting Screenshot-Enabled Stealth Bot...")
     
     with sync_playwright() as p:
         email = generate_email()
@@ -38,7 +52,6 @@ def main():
             timezone_id="Asia/Kolkata"
         )
         
-        # Built-in Anti-Detection Script (No external library required)
         context.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             window.navigator.chrome = { runtime: {} };
@@ -49,18 +62,21 @@ def main():
         page = context.new_page()
         
         try:
-            log_print("Step 1: Opening referral link safely...")
+            log_print("Step 1: Opening referral link...")
             page.goto(REFERRAL_LINK, timeout=60000)
             page.wait_for_load_state("networkidle", timeout=15000)
+            take_screenshot(page, "01_referral_loaded")
             
-            log_print("Step 2: Entering email on main page & triggering modal...")
+            log_print("Step 2: Entering email on main page...")
             page.fill("input[placeholder*='Email'], input[type='email']", email)
             time.sleep(1.5)
+            take_screenshot(page, "02_email_filled")
+            
             page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
-            
-            log_print("Step 3: Waiting for modal & filling credentials...")
             time.sleep(4)
+            take_screenshot(page, "03_clicked_signup_trigger")
             
+            log_print("Step 3: Filling modal credentials...")
             try:
                 page.locator(".modal input[type='email'], form input[type='email']").first.fill(email)
             except:
@@ -68,8 +84,9 @@ def main():
             
             page.locator(".modal input[type='password'], form input[type='password']").first.fill(password)
             time.sleep(1.5)
+            take_screenshot(page, "04_modal_credentials_filled")
             
-            log_print("Step 4: Bypassing and checking terms via JS...")
+            log_print("Step 4: Checking terms checkbox via JS...")
             page.evaluate("""
                 () => {
                     const cb = document.querySelector('input[type="checkbox"]');
@@ -89,10 +106,10 @@ def main():
                     }
                 }
             """)
-            
             time.sleep(1.5)
+            take_screenshot(page, "05_checkbox_checked")
             
-            log_print("Step 5: Force-enabling and clicking Sign Up button...")
+            log_print("Step 5: Clicking Sign Up button...")
             page.evaluate("""
                 () => {
                     const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
@@ -108,12 +125,14 @@ def main():
                 }
             """)
             
-            log_print("Step 6: Waiting for signup confirmation...")
+            log_print("Waiting for signup result...")
             time.sleep(10)
-            log_print("🎉 Signup Flow Executed Successfully!")
+            take_screenshot(page, "06_after_signup")
+            log_print("🎉 Flow Executed with Screenshots!")
             
         except Exception as e:
             log_print(f"❌ Error encountered: {e}")
+            take_screenshot(page, "ERROR_STATE")
         finally:
             browser.close()
             log_print("🏁 Browser closed.")
