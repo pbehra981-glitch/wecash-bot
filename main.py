@@ -2,32 +2,18 @@ import random
 import time
 import csv
 import os
-import urllib.request
 from datetime import datetime
 from playwright.sync_api import sync_playwright
 
 REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
 TOTAL_ACCOUNTS = 1
-PROXY_API_URL = ""
-SCREENSHOT_DIR = "bot_screenshots"
 
 def log_print(message):
     print(message, flush=True)
 
-def take_screenshot(page, step_name):
-    if not os.path.exists(SCREENSHOT_DIR):
-        os.makedirs(SCREENSHOT_DIR)
-    timestamp = datetime.now().strftime("%H%M%S")
-    filepath = os.path.join(SCREENSHOT_DIR, f"{step_name}_{timestamp}.png")
-    try:
-        page.screenshot(path=filepath, full_page=True)
-        log_print(f"📸 Screenshot saved: {filepath}")
-    except Exception as e:
-        log_print(f"⚠️ Failed to take screenshot: {e}")
-
 def generate_email():
-    names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
-    return f"{random.choice(names)}.{random.choice(names)}{random.randint(100, 999)}@gmail.com"
+    names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha", "vikash", "sunil", "ankit"]
+    return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
 def save_to_csv(email, password, status):
     filename = "successful_accounts.csv"
@@ -39,7 +25,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Stealth Anti-Bot Bypass WeCash Bot...")
+    log_print("🚀 Starting Original WeCash Bot...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -48,171 +34,162 @@ def main():
             password = "00000000"
             log_print(f"Generated Email: {email}")
             
-            # STEALTH BROWSER LAUNCH (Bypassing Cloud/Headless Detection)
             browser = p.chromium.launch(
                 headless=True,
+                slow_mo=50,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
                     "--disable-dev-shm-usage",
-                    "--disable-infobars",
-                    "--disable-gpu",
-                    "--window-size=1366,768",
-                    "--start-maximized",
-                    "--disable-setuid-sandbox",
-                    "--no-first-run",
-                    "--no-service-autorun",
-                    "--password-store=basic",
-                    "--use-mock-keychain"
+                    "--disable-infobars"
                 ]
             )
             
             context = browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                viewport={"width": 1366, "height": 768},
-                device_scale_factor=1,
-                is_mobile=False,
-                has_touch=False,
-                locale="en-US",
-                timezone_id="Asia/Kolkata"
+                viewport={"width": 1366, "height": 768}
             )
-            
-            # Inject stealth script to hide webdriver property completely from website
-            context.add_init_script("""
-                Object.defineProperty(navigator, 'webdriver', {
-                    get: () => undefined
-                });
-                window.navigator.chrome = {
-                    runtime: {},
-                };
-                Object.defineProperty(navigator, 'plugins', {
-                    get: () => [1, 2, 3, 4, 5],
-                });
-                Object.defineProperty(navigator, 'languages', {
-                    get: () => ['en-US', 'en'],
-                });
-            """)
-            
             page = context.new_page()
             
             success = False
             for attempt in range(3):
                 try:
-                    log_print(f"Step 1: Opening Link (Attempt {attempt+1})...")
+                    log_print(f"Opening referral link (Attempt {attempt+1})...")
                     page.goto(REFERRAL_LINK, timeout=60000)
                     page.wait_for_load_state("networkidle", timeout=15000)
-                    take_screenshot(page, "01_referral_loaded")
                     success = True
                     break
-                except Exception as net_err:
-                    log_print(f"⚠️ Network issue: {net_err}. Retrying...")
-                    time.sleep(3)
+                except Exception as e:
+                    log_print(f"⚠️ Network retry error: {e}")
+                    time.sleep(5)
             
             if not success:
-                log_print(f"❌ Account {i+1} failed due to network error.")
                 save_to_csv(email, password, "Failed - Network Error")
-                take_screenshot(page, "ERROR_network")
                 browser.close()
+                log_print("❌ Test failed due to network error.")
                 continue
             
             try:
-                # Step 2: Main page email & trigger
-                log_print("Step 2: Entering email on main page...")
+                # Signup steps
+                log_print("Filling email & clicking initial signup...")
+                page.wait_for_selector("input[placeholder*='Email'], input[type='email']", timeout=15000)
                 page.fill("input[placeholder*='Email'], input[type='email']", email)
-                time.sleep(1.5)
-                take_screenshot(page, "02_email_filled")
-                
+                time.sleep(2)
                 page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
-                time.sleep(4)
-                take_screenshot(page, "03_clicked_signup_trigger")
+                time.sleep(3)
                 
-                # Step 3: Modal credentials
-                log_print("Step 3: Inside Modal - Entering email & password...")
                 try:
                     page.locator(".modal input[type='email'], form input[type='email']").first.fill(email)
                 except:
                     pass
-                time.sleep(1)
                 
                 page.locator(".modal input[type='password'], form input[type='password']").first.fill(password)
-                time.sleep(1)
-                take_screenshot(page, "04_modal_credentials_filled")
+                time.sleep(2)
                 
-                # Step 4 & 5: Force-Enable & Click Sign Up Button via Stealth JS
-                log_print("Step 4 & 5: Forcing button activation via stealth evaluation...")
+                # Original JS Checkbox & Signup Bypass
+                log_print("Executing original JS checkbox check & signup click...")
                 page.evaluate("""
                     () => {
-                        const buttons = Array.from(document.querySelectorAll('button, [role="button"], input[type="submit"]'));
-                        buttons.forEach(btn => {
-                            btn.removeAttribute('disabled');
-                            btn.classList.remove('disabled');
-                            const txt = (btn.innerText || '').toLowerCase();
-                            if (txt.includes('sign up') && !txt.includes('google')) {
-                                btn.click();
+                        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                        if (checkboxes.length > 0) {
+                            const cb = checkboxes[0];
+                            cb.checked = true;
+                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+                            cb.dispatchEvent(new Event('input', { bubbles: true }));
+                        } else {
+                            const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                            let node;
+                            while (node = walkers.nextNode()) {
+                                if (node.nodeValue && (node.nodeValue.includes('I agree') || node.nodeValue.includes('Terms'))) {
+                                    node.parentElement.click();
+                                    break;
+                                }
                             }
-                        });
-
-                        const form = document.querySelector('form');
-                        if (form) {
-                            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-                            form.dispatchEvent(submitEvent);
                         }
+
+                        setTimeout(() => {
+                            const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
+                            const signupBtn = buttons.find(b => {
+                                const txt = (b.innerText || '').trim().toLowerCase();
+                                return txt.includes('sign up') && !txt.includes('google');
+                            });
+                            if (signupBtn) {
+                                signupBtn.removeAttribute('disabled');
+                                signupBtn.classList.remove('disabled');
+                                signupBtn.click();
+                            }
+                        }, 1000);
                     }
                 """)
                 
                 log_print("Waiting for dashboard to load after signup...")
-                time.sleep(12) 
-                take_screenshot(page, "06_after_signup_attempt")
+                time.sleep(15)
                 
-                # Scroll down safely
-                log_print("Step 5.5: Scrolling down to Survey Partners...")
+                # BitLabs Task Click
+                log_print("Searching for BitLabs / Task section...")
                 page.evaluate("window.scrollBy(0, 800);")
-                time.sleep(3)
-
-                # Step 6: BitLabs Click
-                log_print("Step 6: Locating and clicking BitLabs survey card...")
+                time.sleep(4)
+                
                 clicked_survey = False
-                for attempt in range(4):
+                for attempt in range(6):
                     try:
                         clicked_survey = page.evaluate("""
                             () => {
                                 const elements = Array.from(document.querySelectorAll('div, a, span, button, p, h3'));
-                                const bitlabsEl = elements.find(el => (el.innerText || '').trim().includes('BitLabs') && el.offsetParent !== null);
-                                if (bitlabsEl) {
-                                    bitlabsEl.scrollIntoView({behavior: 'smooth', block: 'center'});
-                                    bitlabsEl.click();
+                                const target = elements.find(el => {
+                                    const txt = (el.innerText || '').trim();
+                                    return (txt.includes('BitLabs') || txt.includes('Survey') || txt.includes('Offers')) && el.offsetParent !== null;
+                                });
+                                if (target) {
+                                    target.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                    target.click();
                                     return true;
                                 }
                                 return false;
                             }
                         """)
                         if clicked_survey:
-                            log_print("✅ Successfully clicked BitLabs!")
                             break
                     except:
                         pass
                     time.sleep(3)
                 
                 if not clicked_survey:
-                    take_screenshot(page, "ERROR_bitlabs_not_found")
-                    raise Exception("BitLabs card could not be found or clicked.")
+                    raise Exception("BitLabs / Offerwall section not found on dashboard.")
 
-                log_print("Waiting for BitLabs popup modal...")
-                time.sleep(8)
-                take_screenshot(page, "07_bitlabs_modal_opened")
+                log_print("BitLabs / Offerwall opened successfully!")
+                time.sleep(12)
+                
+                # Accept & Continue handler
+                log_print("Handling Accept & Continue / Survey prompts...")
+                for step in range(6):
+                    for frame in page.frames:
+                        if "about:blank" in frame.url: continue
+                        try:
+                            frame.evaluate("""
+                                () => {
+                                    const btns = Array.from(document.querySelectorAll('button, div, span'));
+                                    const btn = btns.find(b => {
+                                        const t = (b.innerText || '').trim();
+                                        return t.includes('Accept') || t.includes('Continue') || t.includes('Start');
+                                    });
+                                    if (btn) btn.click();
+                                }
+                            """)
+                        except:
+                            pass
+                    time.sleep(3)
 
                 save_to_csv(email, password, "Success - Task Triggered")
-                log_print(f"🎉 Account {i+1} completed successfully!")
+                log_print("🎉 Account completed successfully!")
                 
             except Exception as e:
-                log_print(f"❌ Error caught in Account {i+1}: {e}")
+                log_print(f"❌ Error in Account: {e}")
                 save_to_csv(email, password, f"Failed - {str(e)}")
-                take_screenshot(page, "ERROR_EXCEPTION_STATE")
             finally:
                 time.sleep(3)
                 browser.close()
-                
-        log_print("--- Task Complete! ---")
+                log_print("🏁 Script finished run.")
 
 if __name__ == "__main__":
     main()
