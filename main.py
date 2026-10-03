@@ -9,6 +9,20 @@ REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
 TOTAL_ACCOUNTS = 1
 SCREENSHOT_DIR = "bot_screenshots"
 
+# Webshare ke 10 proxies ki list
+PROXIES = [
+    {"ip": "31.59.20.176", "port": "6754", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "45.38.107.97", "port": "6014", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "64.137.96.74", "port": "6641", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "198.23.243.226", "port": "6361", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "38.154.185.97", "port": "6370", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "84.247.60.125", "port": "6095", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "142.111.67.146", "port": "5611", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "191.96.254.138", "port": "6185", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "31.58.9.4", "port": "6077", "user": "bmpgkrsz", "pass": "axzs3906v8y0"},[cite: 9]
+    {"ip": "198.46.161.42", "port": "5092", "user": "bmpgkrsz", "pass": "axzs3906v8y0"}[cite: 9]
+]
+
 def log_print(message):
     print(message, flush=True)
 
@@ -27,17 +41,17 @@ def generate_email():
     names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
-def save_to_csv(email, password, status):
+def save_to_csv(email, password, proxy_used, status):
     filename = "successful_accounts.csv"
     file_exists = os.path.exists(filename)
     with open(filename, mode='a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         if not file_exists:
-            writer.writerow(["Timestamp", "Email", "Password", "Status"])
-        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
+            writer.writerow(["Timestamp", "Email", "Password", "Proxy Used", "Status"])
+        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
 
 def main():
-    log_print("🚀 Starting Direct GitHub Actions Automation Bot...")
+    log_print("🚀 Starting Bot with Multi-Proxy Rotation...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -46,9 +60,18 @@ def main():
             password = "00000000"
             log_print(f"Generated Email: {email}")
             
-            # Browser launch with WebRTC & Datacenter masking flags
+            # Select a random proxy from our 10 proxies list
+            selected_proxy = random.choice(PROXIES)
+            proxy_server = f"http://{selected_proxy['ip']}:{selected_proxy['port']}"
+            log_print(f"🌐 Using Proxy: {proxy_server} ({selected_proxy['ip']})")
+            
             browser = p.chromium.launch(
                 headless=True,
+                proxy={
+                    "server": proxy_server,
+                    "username": selected_proxy['user'],
+                    "password": selected_proxy['pass']
+                },
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
@@ -198,7 +221,6 @@ def main():
                 print("Waiting for BitLabs popup modal to appear...")
                 time.sleep(6)
                 
-                # VPN Detection handler check and refresh click
                 for _ in range(3):
                     try:
                         for frame in page.frames:
@@ -211,7 +233,7 @@ def main():
                         
                         main_refresh = page.locator("button:has-text('Refresh')").first
                         if main_refresh.is_visible(timeout=1000):
-                            print("⚠️ VPN Detected on main page! Clicking Refresh...")
+                            print("⚠️️ VPN Detected on main page! Clicking Refresh...")
                             main_refresh.click(force=True)
                             time.sleep(3)
                     except:
@@ -452,12 +474,12 @@ def main():
 
                 take_screenshot(page, "11_all_questions_completed")
                 print(f"🎉 ALL 10 QUESTIONS COMPLETED! Account {i+1} successfully processed!")
-                save_to_csv(email, password, "Success")
+                save_to_csv(email, password, proxy_server, "Success")
                 
             except Exception as e:
                 print(f"❌ Error caught in Account {i+1}: {e}")
                 take_screenshot(page, "ERROR_STATE")
-                save_to_csv(email, password, f"Failed - {str(e)}")
+                save_to_csv(email, password, proxy_server, f"Failed - {str(e)}")
             finally:
                 time.sleep(2)
                 browser.close()
