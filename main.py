@@ -46,6 +46,7 @@ def main():
             password = "00000000"
             log_print(f"Generated Email: {email}")
             
+            # Browser launch with WebRTC & Datacenter masking flags
             browser = p.chromium.launch(
                 headless=True,
                 args=[
@@ -54,15 +55,18 @@ def main():
                     "--disable-dev-shm-usage",
                     "--disable-infobars",
                     "--disable-gpu",
-                    "--window-size=1366,768"
+                    "--window-size=1366,768",
+                    "--disable-features=WebRtcHideLocalIpsWithMdns",
+                    "--force-color-profile=srgb"
                 ]
             )
             
             context = browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
                 viewport={"width": 1366, "height": 768},
-                locale="en-US",
-                timezone_id="Asia/Kolkata"
+                locale="en-IN",
+                timezone_id="Asia/Kolkata",
+                permissions=["geolocation"]
             )
             
             context.add_init_script("""
@@ -189,11 +193,30 @@ def main():
                 take_screenshot(page, "06_bitlabs_clicked")
 
                 # ==========================================================
-                # STEP 7: POPUP SEQUENCE
+                # STEP 7: POPUP SEQUENCE & VPN DETECTION HANDLER
                 # ==========================================================
                 print("Waiting for BitLabs popup modal to appear...")
                 time.sleep(6)
                 
+                # VPN Detection handler check and refresh click
+                for _ in range(3):
+                    try:
+                        for frame in page.frames:
+                            if "about:blank" in frame.url: continue
+                            refresh_btn = frame.locator("button:has-text('Refresh')").first
+                            if refresh_btn.is_visible(timeout=1500):
+                                print("⚠️ VPN Detected screen found! Clicking Refresh...")
+                                refresh_btn.click(force=True)
+                                time.sleep(3)
+                        
+                        main_refresh = page.locator("button:has-text('Refresh')").first
+                        if main_refresh.is_visible(timeout=1000):
+                            print("⚠️ VPN Detected on main page! Clicking Refresh...")
+                            main_refresh.click(force=True)
+                            time.sleep(3)
+                    except:
+                        pass
+
                 print("Looking for 'Accept & Continue' button...")
                 clicked_accept = False
                 for attempt in range(8):
@@ -381,7 +404,7 @@ def main():
                 # ==========================================================
                 print("Answering Questions 4 to 10...")
                 for q_step in range(4, 11):
-                    print(f"➡️️ Processing Question {q_step}...")
+                    print(f"➡️ Processing Question {q_step}...")
                     step_passed = False
                     
                     for attempt in range(6):
