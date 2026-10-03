@@ -1,4 +1,4 @@
-name: WeCash Screenshot Bot
+name: WeCash Stealth Bot Workflow
 
 on:
   workflow_dispatch:
@@ -18,18 +18,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install playwright requests
+          pip install playwright playwright-stealth requests
           playwright install chromium
           playwright install-deps
 
       - name: Run Bot Script
         run: |
           python -u main.py
-
-      - name: Upload Screenshots as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: bot-screenshots
-          path: bot_screenshots/
-          retention-days: 1
