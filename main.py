@@ -2,15 +2,11 @@ import random
 import time
 import csv
 import os
-import urllib.request
-import threading
 from datetime import datetime
-from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
 from playwright.sync_api import sync_playwright
 
-app = FastAPI()
-
+REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
+TOTAL_ACCOUNTS = 1
 SCREENSHOT_DIR = "bot_screenshots"
 
 def log_print(message):
@@ -31,28 +27,27 @@ def generate_email():
     names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
-def save_to_csv(email, password, proxy_used, status):
+def save_to_csv(email, password, status):
     filename = "successful_accounts.csv"
     file_exists = os.path.exists(filename)
     with open(filename, mode='a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         if not file_exists:
-            writer.writerow(["Timestamp", "Email", "Password", "Proxy Used", "Status"])
-        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
+            writer.writerow(["Timestamp", "Email", "Password", "Status"])
+        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
-def automation_job(referral_link, total_accounts):
-    log_print(f"🚀 Starting FastAPI Automation Job for {total_accounts} accounts...")
+def main():
+    log_print("🚀 Starting Direct GitHub Actions Automation Bot...")
     
     with sync_playwright() as p:
-        for i in range(total_accounts):
-            log_print(f"\n--- Account {i+1} of {total_accounts} ---")
+        for i in range(TOTAL_ACCOUNTS):
+            log_print(f"\n--- Account {i+1} of {TOTAL_ACCOUNTS} ---")
             email = generate_email()
             password = "00000000"
             log_print(f"Generated Email: {email}")
-            selected_proxy = None
             
             browser = p.chromium.launch(
-                headless=False,
+                headless=True,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
@@ -81,8 +76,9 @@ def automation_job(referral_link, total_accounts):
             
             try:
                 log_print("Step 1: Opening referral link...")
-                page.goto(referral_link, timeout=60000)
+                page.goto(REFERRAL_LINK, timeout=60000)
                 page.wait_for_load_state("networkidle", timeout=15000)
+                take_screenshot(page, "01_referral_loaded")
                 
                 log_print("Step 2: Entering email on main page...")
                 page.fill("input[placeholder*='Email'], input[type='email']", email)
@@ -90,6 +86,7 @@ def automation_job(referral_link, total_accounts):
                 
                 page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
                 time.sleep(4)
+                take_screenshot(page, "02_signup_modal_opened")
                 
                 log_print("Step 3: Filling modal credentials...")
                 try:
@@ -99,6 +96,7 @@ def automation_job(referral_link, total_accounts):
                 
                 page.locator(".modal input[type='password'], form input[type='password']").first.fill(password)
                 time.sleep(1.5)
+                take_screenshot(page, "03_credentials_filled")
                 
                 # Step 4: Checkbox Click (Exact Coordinate Safe Method)
                 log_print("Step 4: Clicking the terms checkbox safely inside modal...")
@@ -133,6 +131,7 @@ def automation_job(referral_link, total_accounts):
                     }
                 """)
                 time.sleep(2)
+                take_screenshot(page, "04_checkbox_clicked")
                 
                 # Step 5: Modal ka Yellow Sign-Up button click
                 print("Step 5: Clicking the Modal's Yellow Sign Up button...")
@@ -140,6 +139,7 @@ def automation_job(referral_link, total_accounts):
                 
                 print("Waiting for dashboard to fully load after signup...")
                 time.sleep(7) 
+                take_screenshot(page, "05_dashboard_loaded")
                 
                 # Scroll down safely to Survey Partners
                 print("Step 5.5: Scrolling down safely to Survey Partners...")
@@ -185,6 +185,8 @@ def automation_job(referral_link, total_accounts):
                         print("✅ Successfully clicked BitLabs via JS fallback!")
                     else:
                         raise Exception("BitLabs card could not be found or clicked on the page.")
+
+                take_screenshot(page, "06_bitlabs_clicked")
 
                 # ==========================================================
                 # STEP 7: POPUP SEQUENCE
@@ -239,6 +241,7 @@ def automation_job(referral_link, total_accounts):
                     time.sleep(2)
 
                 time.sleep(2.5)
+                take_screenshot(page, "07_accepted_popups")
 
                 print("Looking for 'Complete your profile' button...")
                 for _ in range(5):
@@ -285,6 +288,7 @@ def automation_job(referral_link, total_accounts):
                     time.sleep(2)
 
                 time.sleep(3)
+                take_screenshot(page, "08_q1_gender_done")
 
                 print("Answering Profile Question 2: Zipcode (400001)...")
                 q2_done = False
@@ -310,6 +314,7 @@ def automation_job(referral_link, total_accounts):
                     time.sleep(2)
 
                 time.sleep(3)
+                take_screenshot(page, "09_q2_zipcode_done")
 
                 print("Answering Profile Question 3: Birthday Year (1995)...")
                 q3_done = False
@@ -369,13 +374,14 @@ def automation_job(referral_link, total_accounts):
                     time.sleep(2)
 
                 time.sleep(3)
+                take_screenshot(page, "10_q3_dob_done")
 
                 # ==========================================================
                 # STEP 9: QUESTIONS 4 TO 10
                 # ==========================================================
                 print("Answering Questions 4 to 10...")
                 for q_step in range(4, 11):
-                    print(f"➡️ Processing Question {q_step}...")
+                    print(f"➡️️ Processing Question {q_step}...")
                     step_passed = False
                     
                     for attempt in range(6):
@@ -421,55 +427,19 @@ def automation_job(referral_link, total_accounts):
                     
                     time.sleep(2)
 
+                take_screenshot(page, "11_all_questions_completed")
                 print(f"🎉 ALL 10 QUESTIONS COMPLETED! Account {i+1} successfully processed!")
-                save_to_csv(email, password, str(selected_proxy), "Success")
+                save_to_csv(email, password, "Success")
                 
             except Exception as e:
                 print(f"❌ Error caught in Account {i+1}: {e}")
-                save_to_csv(email, password, str(selected_proxy), f"Failed - {str(e)}")
+                take_screenshot(page, "ERROR_STATE")
+                save_to_csv(email, password, f"Failed - {str(e)}")
             finally:
                 time.sleep(2)
                 browser.close()
                 
         print("--- Task Complete! ---")
 
-@app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
-    return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>BitLabs Bot (Complete)</title>
-        <style>
-            body { font-family: Arial; background: #0f172a; color: #fff; padding: 40px; }
-            .container { max-width: 400px; margin: auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-            input, button { width: 100%; padding: 12px; margin-top: 15px; border-radius: 6px; border: none; font-size: 16px; box-sizing: border-box; }
-            input { background: #334155; color: #fff; }
-            button { background: #f59e0b; color: #000; font-weight: bold; cursor: pointer; }
-            button:hover { background: #d97706; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>Referral Bot</h2>
-            <form action="/run-task" method="post">
-                <label>Referral Link:</label>
-                <input type="text" name="link" required placeholder="Paste link here">
-                <label>Count:</label>
-                <input type="number" name="count" value="1" min="1" required>
-                <button type="submit">Run Bot</button>
-            </form>
-        </div>
-    </body>
-    </html>
-    """
-
-@app.post("/run-task")
-async def run_task(link: str = Form(...), count: int = Form(...)):
-    thread = threading.Thread(target=automation_job, args=(link, count))
-    thread.start()
-    return HTMLResponse(content="<h3>Task Started! Watch the browser window.</h3><a href='/'>Go Back</a>")
-
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    main()
