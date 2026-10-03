@@ -54,7 +54,7 @@ def save_to_csv(email, password, proxy_used, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
 
 def main():
-    log_print("🚀 Starting Bulletproof WeCash Bot...")
+    log_print("🚀 Starting Coordinate-Click WeCash Bot...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -127,26 +127,42 @@ def main():
                 time.sleep(1)
                 take_screenshot(page, "04_modal_credentials_filled")
                 
-                # Step 4: Bulletproof Checkbox Click Fix
-                log_print("Step 4: Forcing terms checkbox check via JS...")
-                page.evaluate("""
-                    () => {
-                        const elements = Array.from(document.querySelectorAll('*'));
-                        const agreeEl = elements.find(el => (el.innerText || '').includes('I agree to the'));
-                        
-                        if (agreeEl) {
-                            agreeEl.click();
+                # Step 4: DIRECT COORDINATE CLICK ON CHECKBOX (1366x768 Viewport ke hisaab se exact box position)
+                log_print("Step 4: Clicking checkbox via exact screen coordinates...")
+                try:
+                    # Modal ke andar checkbox ke aas-pass ka exact coordinate click
+                    # Viewport 1366x768 mein modal center par hota hai, checkbox roughly X=540, Y=600 ke aas-pass hota hai
+                    # Hum JS se bhi bounding box nikal kar click karwa rahe hain taaki 100% exact ho:
+                    page.evaluate("""
+                        () => {
+                            const cb = document.querySelector('input[type="checkbox"]') || document.querySelector('.ant-checkbox-input');
+                            if (cb) {
+                                cb.scrollIntoView();
+                                const box = cb.getBoundingClientRect();
+                                const clickX = box.left + (box.width / 2);
+                                const clickY = box.top + (box.height / 2);
+                                
+                                // Dispatch direct mouse events
+                                const ev = new MouseEvent('click', {
+                                    view: window,
+                                    bubbles: true,
+                                    cancelable: true,
+                                    clientX: clickX,
+                                    clientY: clickY
+                                });
+                                cb.dispatchEvent(ev);
+                                cb.checked = true;
+                                cb.click();
+                            }
                         }
-                        
-                        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                        checkboxes.forEach(cb => {
-                            cb.checked = true;
-                            cb.click();
-                            cb.dispatchEvent(new Event('change', { bubbles: true }));
-                            cb.dispatchEvent(new Event('input', { bubbles: true }));
-                        });
-                    }
-                """)
+                    """)
+                    
+                    # Fallback direct coordinate mouse click using Playwright
+                    # Modal center mein hone par checkbox ka coordinate X: 535, Y: 597 ke kareeb hota hai
+                    page.mouse.click(535, 597)
+                except Exception as e:
+                    log_print(f"Coordinate click warning: {e}")
+
                 time.sleep(2)
                 take_screenshot(page, "05_checkbox_checked")
                 
