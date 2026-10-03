@@ -1,7 +1,6 @@
 import random
 import time
 from playwright.sync_api import sync_playwright
-from playwright_stealth import stealth_sync
 
 REFERRAL_LINK = "https://wecashapp.com?inviteCode=PiQgs8J8swwMV2obCRDg"
 
@@ -13,14 +12,13 @@ def generate_email():
     return f"{random.choice(names)}.{random.choice(names)}{random.randint(1000, 9999)}@gmail.com"
 
 def main():
-    log_print("🚀 Starting Stealth Anti-Bot Signup Bot...")
+    log_print("🚀 Starting Clean Stealth Signup Bot...")
     
     with sync_playwright() as p:
         email = generate_email()
         password = "00000000"
         log_print(f"Generated Email: {email}")
         
-        # Launch browser with explicit stealth arguments
         browser = p.chromium.launch(
             headless=True,
             args=[
@@ -40,10 +38,15 @@ def main():
             timezone_id="Asia/Kolkata"
         )
         
-        page = context.new_page()
+        # Built-in Anti-Detection Script (No external library required)
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            window.navigator.chrome = { runtime: {} };
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        """)
         
-        # Apply Playwright Stealth to bypass Cloudflare / Bot detection completely
-        stealth_sync(page)
+        page = context.new_page()
         
         try:
             log_print("Step 1: Opening referral link safely...")
@@ -107,7 +110,7 @@ def main():
             
             log_print("Step 6: Waiting for signup confirmation...")
             time.sleep(10)
-            log_print("🎉 Stealth Signup Flow Executed Successfully!")
+            log_print("🎉 Signup Flow Executed Successfully!")
             
         except Exception as e:
             log_print(f"❌ Error encountered: {e}")
