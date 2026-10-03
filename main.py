@@ -54,7 +54,7 @@ def save_to_csv(email, password, proxy_used, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
 
 def main():
-    log_print("🚀 Starting Screenshot-Enabled Standalone WeCash Bot...")
+    log_print("🚀 Starting Bulletproof WeCash Bot...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -94,7 +94,7 @@ def main():
                     success = True
                     break
                 except Exception as net_err:
-                    log_print(f"⚠️️ Network issue: {net_err}. Retrying...")
+                    log_print(f"⚠️ Network issue: {net_err}. Retrying...")
                     time.sleep(3)
             
             if not success:
@@ -127,25 +127,24 @@ def main():
                 time.sleep(1)
                 take_screenshot(page, "04_modal_credentials_filled")
                 
-                # Step 4: Checkbox check via JS
-                log_print("Step 4: Checking terms checkbox via JS...")
+                # Step 4: Bulletproof Checkbox Click Fix
+                log_print("Step 4: Forcing terms checkbox check via JS...")
                 page.evaluate("""
                     () => {
-                        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                        if (checkboxes.length > 0) {
-                            checkboxes[0].checked = true;
-                            checkboxes[0].dispatchEvent(new Event('change', { bubbles: true }));
-                            checkboxes[0].dispatchEvent(new Event('input', { bubbles: true }));
-                        } else {
-                            const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-                            let node;
-                            while (node = walkers.nextNode()) {
-                                if (node.nodeValue && node.nodeValue.includes('I agree to the')) {
-                                    node.parentElement.click();
-                                    break;
-                                }
-                            }
+                        const elements = Array.from(document.querySelectorAll('*'));
+                        const agreeEl = elements.find(el => (el.innerText || '').includes('I agree to the'));
+                        
+                        if (agreeEl) {
+                            agreeEl.click();
                         }
+                        
+                        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                        checkboxes.forEach(cb => {
+                            cb.checked = true;
+                            cb.click();
+                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+                            cb.dispatchEvent(new Event('input', { bubbles: true }));
+                        });
                     }
                 """)
                 time.sleep(2)
