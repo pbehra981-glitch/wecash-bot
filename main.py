@@ -25,7 +25,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Original WeCash Bot...")
+    log_print("🚀 Starting Original WeCash Bot (Fixed Modal Wait)...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -76,7 +76,10 @@ def main():
                 page.fill("input[placeholder*='Email'], input[type='email']", email)
                 time.sleep(2)
                 page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
-                time.sleep(3)
+                
+                # IMPORTANT FIX: Extra wait for modal to fully pop up on cloud runner
+                log_print("Waiting for popup modal to appear...")
+                time.sleep(4)
                 
                 try:
                     page.locator(".modal input[type='email'], form input[type='email']").first.fill(email)
