@@ -37,7 +37,7 @@ def save_to_csv(email, password, status):
         writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Guaranteed Checkbox WeCash Bot...")
+    log_print("🚀 Starting Bulletproof Checkbox WeCash Bot...")
     
     with sync_playwright() as p:
         log_print("\n--- Test Account Started ---")
@@ -101,29 +101,47 @@ def main():
             time.sleep(2)
             take_screenshot(page, "04_password_filled")
             
-            # --- GUARANTEED CHECKBOX CLICK FIX ---
-            log_print("Clicking terms checkbox...")
-            try:
-                page.locator("input[type='checkbox']").click(force=True)
-            except Exception as e:
-                log_print(f"Checkbox direct click fallback: {e}")
-                page.evaluate("""
-                    () => {
-                        const cb = document.querySelector("input[type='checkbox']");
-                        if (cb) {
-                            cb.click();
-                            cb.checked = true;
-                            cb.dispatchEvent(new Event('change', { bubbles: true }));
+            # --- ULTIMATE JS CHECKBOX & SIGNUP BYPASS ---
+            log_print("Executing hardcore JS checkbox check & signup click...")
+            page.evaluate("""
+                () => {
+                    // 1. Find and check the terms checkbox strictly
+                    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                    if (checkboxes.length > 0) {
+                        const cb = checkboxes[0];
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                        cb.dispatchEvent(new Event('input', { bubbles: true }));
+                    } else {
+                        // Fallback text click
+                        const walkers = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                        let node;
+                        while (node = walkers.nextNode()) {
+                            if (node.nodeValue && (node.nodeValue.includes('I agree') || node.nodeValue.includes('Terms'))) {
+                                node.parentElement.click();
+                                break;
+                            }
                         }
                     }
-                """)
+
+                    // 2. Enable and click the Sign Up button directly via JS
+                    setTimeout(() => {
+                        const buttons = Array.from(document.querySelectorAll('button, [role="button"]'));
+                        const signupBtn = buttons.find(b => {
+                            const txt = (b.innerText || '').trim().toLowerCase();
+                            return txt.includes('sign up') && !txt.includes('google');
+                        });
+                        if (signupBtn) {
+                            signupBtn.removeAttribute('disabled');
+                            signupBtn.classList.remove('disabled');
+                            signupBtn.click();
+                        }
+                    }, 1000);
+                }
+            """)
             
-            time.sleep(2)
-            take_screenshot(page, "05_terms_agreed")
-            
-            # Sign Up Button submission
-            log_print("Clicking final Sign Up button...")
-            page.locator("button:has-text('Sign Up')").filter(has_not=page.locator("text=Google")).last.click(force=True, timeout=10000)
+            time.sleep(5)
+            take_screenshot(page, "05_after_js_click")
 
             log_print("Waiting for dashboard to load after signup...")
             time.sleep(15)
@@ -186,7 +204,7 @@ def main():
                 time.sleep(3)
 
             save_to_csv(email, password, "Success - Task Triggered")
-            log_print("🎉 Test Account completed successfully with guaranteed checkbox fix!")
+            log_print("🎉 Test Account completed successfully with JS bypass!")
             
         except Exception as e:
             log_print(f"❌ Error in Test Account: {e}")
