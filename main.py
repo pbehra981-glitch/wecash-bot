@@ -25,36 +25,21 @@ def take_screenshot(page, step_name):
     except Exception as e:
         log_print(f"⚠️ Failed to take screenshot: {e}")
 
-def get_dynamic_proxy():
-    if not PROXY_API_URL:
-        return None
-    try:
-        req = urllib.request.Request(PROXY_API_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=8) as response:
-            proxy_ip = response.read().decode('utf-8').strip()
-            if proxy_ip:
-                if not proxy_ip.startswith("http"):
-                    return f"http://{proxy_ip}"
-                return proxy_ip
-    except Exception as e:
-        log_print(f"⚠️ Proxy API Fetch Error: {e}")
-    return None
-
 def generate_email():
     names = ["deepak", "rohit", "amit", "manish", "rahul", "pooja", "neha"]
-    return f"{random.choice(names)}.{random.choice(names)}@gmail.com"
+    return f"{random.choice(names)}.{random.choice(names)}{random.randint(100, 999)}@gmail.com"
 
-def save_to_csv(email, password, proxy_used, status):
+def save_to_csv(email, password, status):
     filename = "successful_accounts.csv"
     file_exists = os.path.exists(filename)
     with open(filename, mode='a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         if not file_exists:
-            writer.writerow(["Timestamp", "Email", "Password", "Proxy Used", "Status"])
-        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, proxy_used, status])
+            writer.writerow(["Timestamp", "Email", "Password", "Status"])
+        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), email, password, status])
 
 def main():
-    log_print("🚀 Starting Direct Button Force-Click WeCash Bot...")
+    log_print("🚀 Starting Stealth Anti-Bot Bypass WeCash Bot...")
     
     with sync_playwright() as p:
         for i in range(TOTAL_ACCOUNTS):
@@ -63,25 +48,51 @@ def main():
             password = "00000000"
             log_print(f"Generated Email: {email}")
             
-            selected_proxy = get_dynamic_proxy()
-            proxy_config = {"server": selected_proxy} if selected_proxy else None
-            
+            # STEALTH BROWSER LAUNCH (Bypassing Cloud/Headless Detection)
             browser = p.chromium.launch(
                 headless=True,
-                slow_mo=60,
                 args=[
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
                     "--disable-dev-shm-usage",
-                    "--disable-infobars"
+                    "--disable-infobars",
+                    "--disable-gpu",
+                    "--window-size=1366,768",
+                    "--start-maximized",
+                    "--disable-setuid-sandbox",
+                    "--no-first-run",
+                    "--no-service-autorun",
+                    "--password-store=basic",
+                    "--use-mock-keychain"
                 ]
             )
             
             context = browser.new_context(
-                proxy=proxy_config,
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                viewport={"width": 1366, "height": 768}
+                viewport={"width": 1366, "height": 768},
+                device_scale_factor=1,
+                is_mobile=False,
+                has_touch=False,
+                locale="en-US",
+                timezone_id="Asia/Kolkata"
             )
+            
+            # Inject stealth script to hide webdriver property completely from website
+            context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+                window.navigator.chrome = {
+                    runtime: {},
+                };
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5],
+                });
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['en-US', 'en'],
+                });
+            """)
+            
             page = context.new_page()
             
             success = False
@@ -99,7 +110,7 @@ def main():
             
             if not success:
                 log_print(f"❌ Account {i+1} failed due to network error.")
-                save_to_csv(email, password, str(selected_proxy), "Failed - Network Error")
+                save_to_csv(email, password, "Failed - Network Error")
                 take_screenshot(page, "ERROR_network")
                 browser.close()
                 continue
@@ -108,11 +119,11 @@ def main():
                 # Step 2: Main page email & trigger
                 log_print("Step 2: Entering email on main page...")
                 page.fill("input[placeholder*='Email'], input[type='email']", email)
-                time.sleep(1)
+                time.sleep(1.5)
                 take_screenshot(page, "02_email_filled")
                 
                 page.click("button:has-text('Claim your gift'), button:has-text('Sign Up')")
-                time.sleep(3)
+                time.sleep(4)
                 take_screenshot(page, "03_clicked_signup_trigger")
                 
                 # Step 3: Modal credentials
@@ -127,11 +138,10 @@ def main():
                 time.sleep(1)
                 take_screenshot(page, "04_modal_credentials_filled")
                 
-                # Step 4 & 5: Bypass Checkbox and Force-Enable & Click Sign Up Button Directly
-                log_print("Step 4 & 5: Bypassing checkbox and forcing Sign Up button...")
+                # Step 4 & 5: Force-Enable & Click Sign Up Button via Stealth JS
+                log_print("Step 4 & 5: Forcing button activation via stealth evaluation...")
                 page.evaluate("""
                     () => {
-                        // 1. Force remove disabled from all buttons or form submitters
                         const buttons = Array.from(document.querySelectorAll('button, [role="button"], input[type="submit"]'));
                         buttons.forEach(btn => {
                             btn.removeAttribute('disabled');
@@ -142,7 +152,6 @@ def main():
                             }
                         });
 
-                        // 2. Fallback: Dispatch submit event directly on form
                         const form = document.querySelector('form');
                         if (form) {
                             const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
@@ -152,7 +161,7 @@ def main():
                 """)
                 
                 log_print("Waiting for dashboard to load after signup...")
-                time.sleep(10) 
+                time.sleep(12) 
                 take_screenshot(page, "06_after_signup_attempt")
                 
                 # Scroll down safely
@@ -192,12 +201,12 @@ def main():
                 time.sleep(8)
                 take_screenshot(page, "07_bitlabs_modal_opened")
 
-                save_to_csv(email, password, str(selected_proxy), "Success - Task Triggered")
+                save_to_csv(email, password, "Success - Task Triggered")
                 log_print(f"🎉 Account {i+1} completed successfully!")
                 
             except Exception as e:
                 log_print(f"❌ Error caught in Account {i+1}: {e}")
-                save_to_csv(email, password, str(selected_proxy), f"Failed - {str(e)}")
+                save_to_csv(email, password, f"Failed - {str(e)}")
                 take_screenshot(page, "ERROR_EXCEPTION_STATE")
             finally:
                 time.sleep(3)
